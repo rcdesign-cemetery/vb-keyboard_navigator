@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<product productid="kbd_nav" active="1">
+	<title>Keyboard Navigator</title>
+	<description>Adds kbd shortcuts for fast navigation (CTRL+Arrows and so on)</description>
+	<version>0.5</version>
+	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=kbd_nav]]></url>
+	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=kbd_nav]]></versioncheckurl>
+	<apm_releasedate>0</apm_releasedate>
+	<apm_author />
+	<apm_relatedurl />
+	<apm_extrainfo />
+	<apm_extraedit />
+	<dependencies>
+	</dependencies>
+	<codes>
+	</codes>
+	<templates>
+		<template name="kbd_nav" templatetype="template" date="1248707549" username="Vitaly" version=""><![CDATA[<if condition="($foruminfo['forumid'] && $bbuserinfo['userid'])"><link href="misc.php?do=nextnonread&forumid=$foruminfo[forumid]" id="LinkNew" /></if>
+<script type="text/javascript"><!--
+document.onkeydown = NavigateThrough;
+var useHotKey=true;
+function NavigateThrough (event)
+{
+  if(!window.useHotKey) return;
+  if (!document.getElementById) return;
+  if (window.event) event = window.event;
+  if (event.ctrlKey && !event.shiftKey) {
+    var link = null;
+    var href = null;
+    switch (event.keyCode ? event.keyCode : event.which ? event.which : null)
+    {
+      case 0x25: link = document.getElementById ('LinkPrev'); break;
+      case 0x27: link = document.getElementById ('LinkNext'); break;
+      case 0x26: link = document.getElementById ('LinkUp'  ); break;
+      case 0x28: link = document.getElementById ('LinkNew' ); break;
+      // case 0x24: href = '/'; break;
+    }
+    if (link && link.href) document.location = link.href;
+    if (href) document.location = href;
+  }			
+}// -->
+</script>]]></template>
+		<template name="kbd_nav_block" templatetype="template" date="1248708022" username="Vitaly" version=""><![CDATA[<script type="text/javascript"><!--
+var c = document.getElementsByTagName('textarea');
+for (var i=0; i<c.length; i++) {
+	c[i].onfocus = onFocusHandler;
+	c[i].onblur = onBlurHandler;
+}
+var c = document.getElementsByTagName('input');
+for (var i=0; i<c.length; i++) {
+	if (c[i].type == 'text') {
+		c[i].onfocus = onFocusHandler;
+		c[i].onblur = onBlurHandler;
+	}
+}
+function onFocusHandler() {
+	window.useHotKey = false;
+}
+function onBlurHandler() {
+	window.useHotKey = true;
+}
+// --></script>]]></template>
+	</templates>
+	<plugins>
+		<plugin active="1" executionorder="5">
+			<title>Cache template</title>
+			<hookname>cache_templates</hookname>
+			<phpcode><![CDATA[$globaltemplates = array_merge($globaltemplates, array( 'kbd_nav', 'kbd_nav_block' ));]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Get a thread with new posts</title>
+			<hookname>misc_start</hookname>
+			<phpcode><![CDATA[if ($_REQUEST['do'] == 'nextnonread')
+{
+  // Deny access to guests
+  if (!$vbulletin->userinfo['userid'])
+  {
+    print_no_permission();
+  }
+
+  // Don't allow access to anything below if an invalid $forumid was specified
+  if (!$foruminfo['forumid'])
+  {
+    eval(standard_error(fetch_error('invalidid', $vbphrase['forum'], $vbulletin->options['contactuslink'])));
+  }
+
+  // get permission to view forum
+  $_permsgetter_ = 'forumdisplay';
+  $forumperms = fetch_permissions($foruminfo['forumid']);
+  if (!($forumperms & $vbulletin->bf_ugp_forumpermissions['canview']))
+  {
+    print_no_permission();
+  }
+
+  require_once(DIR . '/includes/functions_bigthree.php');
+
+  // check if there is a forum password and if so, ensure the user has it set
+  verify_forum_password($foruminfo['forumid'], $foruminfo['password']);
+
+  // get vbulletin->iforumcache - for use by makeforumjump and forums list
+  // fetch the forum even if they are invisible since its needed
+  // for the title but we'll unset that further down
+  // also fetch subscription info for $show['subscribed'] variable
+  cache_ordered_forums(1, 1, $vbulletin->userinfo['userid']);
+
+  $lastread = 0;
+
+  //get last read info
+  if ($vbulletin->options['threadmarking'])
+  {
+    $foruminfo['forumread'] = $vbulletin->forumcache["$foruminfo[forumid]"]['forumread'];
+    $lastread = max($foruminfo['forumread'], TIMENOW - ($vbulletin->options['markinglimit'] * 86400));
+  }
+  else
+  {
+    $bbforumview = intval(fetch_bbarray_cookie('forum_view', $foruminfo['forumid']));
+    $lastread = max($bbforumview, $vbulletin->userinfo['lastvisit']);
+  }
+
+  // get thread data
+  $sqlsortorder = 'ASC';
+  $sqlsortfield = 'thread.lastpost';
+
+  // remove threads from users on the global ignore list if user is not a moderator
+  if ($Coventry = fetch_coventry('string') AND !can_moderate($foruminfo['forumid']))
+  {
+    $globalignore = "AND postuserid NOT IN ($Coventry) ";
+  }
+  else
+  {
+    $globalignore = '';
+  }
+
+  // display threads
+  if (!($forumperms & $vbulletin->bf_ugp_forumpermissions['canviewothers']))
+  {
+    $limitothers = "AND postuserid = " . $vbulletin->userinfo['userid'] . " AND " . $vbulletin->userinfo['userid'] . " <> 0";
+  }
+  else
+  {
+    $limitothers = '';
+  }
+
+  if (!can_moderate($forumid, 'canmoderateposts'))
+  {
+    if (!($forumperms & $vbulletin->bf_ugp_forumpermissions['canseedelnotice']))
+    {
+      $visiblethreads = " AND visible = 1 ";
+    }
+    else
+    {
+      $visiblethreads = " AND visible IN (1,2)";
+    }
+  }
+  else
+  {
+    $visiblethreads = " AND visible IN (0,1,2)";
+  }
+
+  if (in_coventry($vbulletin->userinfo['userid'], false))
+  {
+    $tachy_columns = '';
+    $tachy_joins   = "
+      LEFT JOIN " . TABLE_PREFIX . "tachythreadpost AS TP
+        ON ( thread.threadid = TP.threadid AND TP.userid = " . $vbulletin->userinfo['userid'] . " )
+    ";
+    $tachy_where   = "
+      AND ( TP.userid IS NULL OR IF(
+        TR.userid IS NULL,
+        TP.lastpost > $lastread,
+        TP.lastpost > TR.readtime
+      ) )
+    ";
+  }
+  else
+  {
+    $tachy_columns = '';
+    $tachy_joins   = '';
+    $tachy_where   = '';
+  }
+
+  $tachy_joins .= "
+    LEFT JOIN " . TABLE_PREFIX . "threadread AS TR
+      ON ( thread.threadid = TR.threadid AND TR.userid = " . $vbulletin->userinfo['userid'] . " )
+  ";
+  $tachy_where .= "
+    AND ( thread.lastpost > $lastread AND IF(
+      TR.userid IS NOT NULL,
+      thread.lastpost > TR.readtime,
+      1
+    ) )
+  ";
+
+  // we need only one thread with new posts
+  $thread = $db->query_first_slave("
+    SELECT
+      thread.threadid
+      $tachy_columns
+    FROM
+      " . TABLE_PREFIX . "thread AS thread
+      $tachy_joins
+    WHERE
+      forumid = $foruminfo[forumid]
+      $tachy_where
+      $visiblethreads
+      $globalignore
+      $limitothers
+    ORDER BY
+      $sqlsortfield $sqlsortorder
+    LIMIT
+      1
+  ");
+
+  if (is_array($thread))
+  {
+    $vbulletin->url =
+      'showthread.php?'
+      . $vbulletin->session->vars['sessionurl']
+      . "goto=newpost&amp;"
+      . "t=$thread[threadid]";
+  }
+  else
+  {
+    $vbulletin->url =
+      'forumdisplay.php?'
+      . $vbulletin->session->vars['sessionurl']
+      . "forumid=$foruminfo[forumid]";
+  }
+
+  eval(print_standard_redirect('search'));
+}]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title>Insert UP link in navbar</title>
+			<hookname>navbits</hookname>
+			<phpcode><![CDATA[if ($counter == $lastelement-1) $nav_url .= '" id="LinkUp';]]></phpcode>
+		</plugin>
+		<plugin active="1" executionorder="5">
+			<title><![CDATA[Add javascript & Change Prev/Next links]]></title>
+			<hookname>parse_templates</hookname>
+			<phpcode><![CDATA[$vbulletin->templatecache['headinclude'] .= "\n" . fetch_template('kbd_nav');
+
+$vbulletin->templatecache['footer'] .= "\n" . fetch_template('kbd_nav_block');
+
+$kbd_nav_old = array('&lt;', '&gt;', 'rel=\"prev\"', 'rel=\"next\"');
+$kbd_nav_new = array('&larr; Ctrl', 'Ctrl &rarr;', 'rel=\"prev\"  id=\"LinkPrev\"', 'rel=\"next\" id=\"LinkNext\"');
+$vbulletin->templatecache['pagenav'] = str_replace($kbd_nav_old, $kbd_nav_new, $vbulletin->templatecache['pagenav']);]]></phpcode>
+		</plugin>
+	</plugins>
+	<phrases>
+	</phrases>
+	<options>
+	</options>
+	<helptopics>
+	</helptopics>
+	<cronentries>
+	</cronentries>
+	<faqentries>
+	</faqentries>
+	<templateedits>
+	</templateedits>
+</product>
