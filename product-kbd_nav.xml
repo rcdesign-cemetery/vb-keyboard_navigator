@@ -18,9 +18,6 @@
 	<templates>
 		<template name="kbd_nav" templatetype="template" date="1248707549" username="Vitaly" version=""><![CDATA[<if condition="($foruminfo['forumid'] && $bbuserinfo['userid'])"><link href="misc.php?do=nextnonread&forumid=$foruminfo[forumid]" id="LinkNew" /></if>
 <script type="text/javascript">
-if (typeof(useKbdHotKey) == "undefined")  // can be used by 3d party script
-    var useKbdHotKey=true;
-
 if ((typeof(YAHOO) != "undefined"))
 {
     YAHOO.util.Event.on(document, "keydown", NavigateThrough);
@@ -32,7 +29,6 @@ else
 
 function NavigateThrough (event)
 {
-    if (!window.useKbdHotKey) return;
     if (!document.getElementById) return;
     if (!event) var event = window.event;
     if (event.ctrlKey && !event.shiftKey) {
