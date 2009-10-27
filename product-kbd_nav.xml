@@ -239,7 +239,15 @@ function NavigateThrough (event)
 			<phpcode><![CDATA[$vbulletin->templatecache['headinclude'] .= "\n" . fetch_template('kbd_nav');
 $kbd_nav_old = array('&lt;', '&gt;', 'rel=\"prev\"', 'rel=\"next\"');
 $kbd_nav_new = array('&larr; Ctrl', 'Ctrl &rarr;', 'rel=\"prev\"  id=\"LinkPrev\"', 'rel=\"next\" id=\"LinkNext\"');
-$vbulletin->templatecache['pagenav'] = str_replace($kbd_nav_old, $kbd_nav_new, $vbulletin->templatecache['pagenav']);]]></phpcode>
+$vbulletin->templatecache['pagenav'] = str_replace($kbd_nav_old, $kbd_nav_new, $vbulletin->templatecache['pagenav']);
+
+if ('album' ==THIS_SCRIPT)
+{
+	$kbd_nav_pic_old = array('>$pic_location[next_text_short]</a>', '>$pic_location[prev_text_short]</a>');
+	$kbd_nav_pic_new = array(' id=\"LinkNext\">$pic_location[next_text_short]</a>', ' id=\"LinkPrev\">$pic_location[prev_text_short]</a>');
+	$vbulletin->templatecache['album_pictureview'] = str_replace($kbd_nav_pic_old, $kbd_nav_pic_new, $vbulletin->templatecache['album_pictureview']);
+}
+]]></phpcode>
 		</plugin>
 	</plugins>
 	<phrases>
