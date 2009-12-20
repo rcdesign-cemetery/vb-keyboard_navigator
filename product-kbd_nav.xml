@@ -6,11 +6,6 @@
 	<version>0.6</version>
 	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=kbd_nav]]></url>
 	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=kbd_nav]]></versioncheckurl>
-	<apm_releasedate>0</apm_releasedate>
-	<apm_author />
-	<apm_relatedurl />
-	<apm_extrainfo />
-	<apm_extraedit />
 	<dependencies>
 	</dependencies>
 	<codes>
@@ -189,6 +184,9 @@ function NavigateThrough (event)
     ) )
   ";
 
+  // not_redirect
+  $not_redirect = ' AND thread.open <> 10';
+
   // we need only one thread with new posts
   $thread = $db->query_first_slave("
     SELECT
@@ -199,8 +197,9 @@ function NavigateThrough (event)
       $tachy_joins
     WHERE
       forumid = $foruminfo[forumid]
-      $tachy_where
       $visiblethreads
+      $tachy_where
+      $not_redirect
       $globalignore
       $limitothers
     ORDER BY
