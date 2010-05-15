@@ -3,15 +3,22 @@
 <product productid="kbd_nav" active="1">
 	<title>Keyboard Navigator</title>
 	<description>Adds kbd shortcuts for fast navigation (CTRL+Arrows and so on)</description>
-	<version>0.6</version>
+	<version>0.7</version>
 	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=kbd_nav]]></url>
 	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=kbd_nav]]></versioncheckurl>
+	<apm_releasedate></apm_releasedate>
+	<apm_author></apm_author>
+	<apm_relatedurl></apm_relatedurl>
+	<apm_extrainfo></apm_extrainfo>
+	<apm_extraedit></apm_extraedit>
 	<dependencies>
 	</dependencies>
 	<codes>
 	</codes>
 	<templates>
-		<template name="kbd_nav" templatetype="template" date="1248707549" username="Vitaly" version=""><![CDATA[<if condition="($foruminfo['forumid'] && $bbuserinfo['userid'])"><link href="misc.php?do=nextnonread&forumid=$foruminfo[forumid]" id="LinkNew" /></if>
+		<template name="kbd_nav" templatetype="template" date="1272173043" username="sawoy" version="0.6"><![CDATA[<vb:if condition="($foruminfo['forumid'] && $bbuserinfo['userid'])">
+  <link href="misc.php?do=nextnonread&forumid={vb:raw foruminfo.forumid}" id="LinkNew" />
+</vb:if>
 <script type="text/javascript">
 if ((typeof(YAHOO) != "undefined"))
 {
@@ -39,8 +46,8 @@ function NavigateThrough (event)
         var link;
         switch (event.keyCode ? event.keyCode : event.which ? event.which : null)
         {
-            case 0x25: link = document.getElementById ('LinkPrev'); break;
-            case 0x27: link = document.getElementById ('LinkNext'); break;
+            case 0x25: link = document.getElementsByName ('LinkPrev'); link = link[0]; break;
+            case 0x27: link = document.getElementsByName ('LinkNext'); link = link[0]; break;
             case 0x26: link = document.getElementById ('LinkUp'  ); break;
             case 0x28: link = document.getElementById ('LinkNew' ); break;
             // case 0x24: href = '/'; break;
@@ -52,13 +59,15 @@ function NavigateThrough (event)
 }//
 </script>]]></template>
 	</templates>
+	<stylevardfns>
+	</stylevardfns>
+	<stylevars>
+	</stylevars>
 	<plugins>
 		<plugin active="1" executionorder="5">
 			<title>Cache template</title>
 			<hookname>cache_templates</hookname>
-			<phpcode><![CDATA[
-                            $globaltemplates[] = 'kbd_nav';
-                        ]]></phpcode>
+			<phpcode><![CDATA[$cache[] = 'kbd_nav';]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
 			<title>Get a thread with new posts</title>
@@ -150,26 +159,23 @@ function NavigateThrough (event)
     $visiblethreads = " AND visible IN (0,1,2)";
   }
 
+  $tachy_columns = '';
+  $tachy_joins = '';
+  $tachy_where = '';
+
   if (in_coventry($vbulletin->userinfo['userid'], false))
   {
-    $tachy_columns = '';
-    $tachy_joins   = "
+    $tachy_joins = "
       LEFT JOIN " . TABLE_PREFIX . "tachythreadpost AS TP
         ON ( thread.threadid = TP.threadid AND TP.userid = " . $vbulletin->userinfo['userid'] . " )
     ";
-    $tachy_where   = "
+    $tachy_where = "
       AND ( TP.userid IS NULL OR IF(
         TR.userid IS NULL,
         TP.lastpost > $lastread,
         TP.lastpost > TR.readtime
       ) )
     ";
-  }
-  else
-  {
-    $tachy_columns = '';
-    $tachy_joins   = '';
-    $tachy_where   = '';
   }
 
   $tachy_joins .= "
@@ -235,21 +241,51 @@ function NavigateThrough (event)
 		<plugin active="1" executionorder="5">
 			<title><![CDATA[Add javascript & Change Prev/Next links]]></title>
 			<hookname>parse_templates</hookname>
-			<phpcode><![CDATA[
-if ('album' == THIS_SCRIPT)
+			<phpcode><![CDATA[if ('album' == THIS_SCRIPT) 
 {
-	$kbd_nav_pic_old = array('>$pic_location[next_text_short]</a>', '>$pic_location[prev_text_short]</a>');
-	$kbd_nav_pic_new = array(' id=\"LinkNext\">$pic_location[next_text_short]</a>', ' id=\"LinkPrev\">$pic_location[prev_text_short]</a>');
-	$vbulletin->templatecache['album_pictureview'] = str_replace($kbd_nav_pic_old, $kbd_nav_pic_new, $vbulletin->templatecache['album_pictureview']);
+    global $foruminfo;
+
+    $tmpl = vB_Template::create('kbd_nav');
+    $tmpl->register( 'foruminfo', $foruminfo );
+    $tmpl = $tmpl->render();
+
+    global $template_hook;
+    $template_hook['headinclude_javascript'] .= "\n" . $tmpl;
+
+    $replaces = array(
+        '>&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>' => 'name="LinkPrev">&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>',
+        '>\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>' => 'name="LinkNext">\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>',
+    );
+
+    $vbulletin->templatecache['album_pictureview'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['album_pictureview'] );
+
+    unset($replaces, $tmpl);
 }
 else
 {
-	$vbulletin->templatecache['headinclude'] .= "\n" . fetch_template('kbd_nav');
-	$kbd_nav_old = array('&lt;', '&gt;', 'rel=\"prev\"', 'rel=\"next\"');
-	$kbd_nav_new = array('&larr; Ctrl', 'Ctrl &rarr;', 'rel=\"prev\"  id=\"LinkPrev\"', 'rel=\"next\" id=\"LinkNext\"');
-	$vbulletin->templatecache['pagenav'] = str_replace($kbd_nav_old, $kbd_nav_new, $vbulletin->templatecache['pagenav']);
-}
-]]></phpcode>
+    global $foruminfo;
+
+    $tmpl = vB_Template::create('kbd_nav');
+    $tmpl->register( 'foruminfo', $foruminfo );
+    $tmpl = $tmpl->render();
+
+    global $template_hook;
+    $template_hook['headinclude_javascript'] .= "\n" . $tmpl;
+
+    $replaces = array(
+        // add name attributes
+        'rel="prev"' => 'rel="prev" name="LinkPrev" style="top: 0px;"',
+        'rel="next"' => 'rel="next" name="LinkNext" style="top: 0px;"',
+
+        // replace images by CTRL+LEFT, CTRL+RIGHT texts
+        '<img src="\' . vB_Template_Runtime::fetchStylevar("imgdir_pagination") . \'/previous-\' . vB_Template_Runtime::fetchStylevar("right") . \'.png" alt="\' . vB_Template_Runtime::parsePhrase("previous") . \'" />' => '&larr; Ctrl',
+        '<img src="\' . vB_Template_Runtime::fetchStylevar("imgdir_pagination") . \'/next-\' . vB_Template_Runtime::fetchStylevar("right") . \'.png" alt="\' . vB_Template_Runtime::parsePhrase("next") . \'" />' => 'Ctrl &rarr;',
+    );
+
+    $vbulletin->templatecache['pagenav'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['pagenav'] );
+
+    unset($replaces, $tmpl);
+}]]></phpcode>
 		</plugin>
 	</plugins>
 	<phrases>
