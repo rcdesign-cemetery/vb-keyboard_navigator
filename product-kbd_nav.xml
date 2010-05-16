@@ -16,10 +16,11 @@
 	<codes>
 	</codes>
 	<templates>
-		<template name="kbd_nav" templatetype="template" date="1272173043" username="sawoy" version="0.6"><![CDATA[<vb:if condition="($foruminfo['forumid'] && $bbuserinfo['userid'])">
+		<template name="kbd_nav" templatetype="template" date="1274038822" username="Vitaly" version="0.7"><![CDATA[<vb:if condition="($foruminfo['forumid'] && $bbuserinfo['userid'])">
   <link href="misc.php?do=nextnonread&forumid={vb:raw foruminfo.forumid}" id="LinkNew" />
 </vb:if>
 <script type="text/javascript">
+<!--
 if ((typeof(YAHOO) != "undefined"))
 {
     YAHOO.util.Event.on(document, "keydown", NavigateThrough);
@@ -46,17 +47,18 @@ function NavigateThrough (event)
         var link;
         switch (event.keyCode ? event.keyCode : event.which ? event.which : null)
         {
-            case 0x25: link = document.getElementsByName ('LinkPrev'); link = link[0]; break;
-            case 0x27: link = document.getElementsByName ('LinkNext'); link = link[0]; break;
-            case 0x26: link = document.getElementById ('LinkUp'  ); break;
-            case 0x28: link = document.getElementById ('LinkNew' ); break;
+            case 0x25: link = document.getElementsByName('LinkPrev'); link = link[0]; break;
+            case 0x27: link = document.getElementsByName('LinkNext'); link = link[0]; break;
+            case 0x26: link = document.getElementById('LinkUp'); break;
+            case 0x28: link = document.getElementById('LinkNew'); break;
             // case 0x24: href = '/'; break;
         }
 
         if (link && link.href) document.location = link.href;
         return true;
     }
-}//
+}
+// -->
 </script>]]></template>
 	</templates>
 	<stylevardfns>
@@ -234,24 +236,28 @@ function NavigateThrough (event)
 }]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
-			<title>Insert UP link in navbar</title>
+			<title>Calculate UP link while processing navbar</title>
 			<hookname>navbits</hookname>
-			<phpcode><![CDATA[if ($counter == $lastelement-1) $nav_url .= '" id="LinkUp';]]></phpcode>
+			<phpcode><![CDATA[global $headinclude_bottom;
+
+if ($counter == $lastelement-1) {
+    $headinclude_bottom .= "\n<link href=\"$nav_url\" id=\"LinkUp\" />";
+}]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
 			<title><![CDATA[Add javascript & Change Prev/Next links]]></title>
 			<hookname>parse_templates</hookname>
-			<phpcode><![CDATA[if ('album' == THIS_SCRIPT) 
+			<phpcode><![CDATA[global $foruminfo;
+
+$tmpl = vB_Template::create('kbd_nav');
+$tmpl->register( 'foruminfo', $foruminfo );
+$tmpl = $tmpl->render();
+
+global $template_hook;
+$template_hook['headinclude_javascript'] .= "\n" . $tmpl;
+
+if ('album' == THIS_SCRIPT) 
 {
-    global $foruminfo;
-
-    $tmpl = vB_Template::create('kbd_nav');
-    $tmpl->register( 'foruminfo', $foruminfo );
-    $tmpl = $tmpl->render();
-
-    global $template_hook;
-    $template_hook['headinclude_javascript'] .= "\n" . $tmpl;
-
     $replaces = array(
         '>&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>' => 'name="LinkPrev">&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>',
         '>\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>' => 'name="LinkNext">\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>',
@@ -263,15 +269,6 @@ function NavigateThrough (event)
 }
 else
 {
-    global $foruminfo;
-
-    $tmpl = vB_Template::create('kbd_nav');
-    $tmpl->register( 'foruminfo', $foruminfo );
-    $tmpl = $tmpl->render();
-
-    global $template_hook;
-    $template_hook['headinclude_javascript'] .= "\n" . $tmpl;
-
     $replaces = array(
         // add name attributes
         'rel="prev"' => 'rel="prev" name="LinkPrev" style="top: 0px;"',
