@@ -6,11 +6,11 @@
 	<version>0.7</version>
 	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=kbd_nav]]></url>
 	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=kbd_nav]]></versioncheckurl>
-	<apm_releasedate></apm_releasedate>
-	<apm_author></apm_author>
-	<apm_relatedurl></apm_relatedurl>
-	<apm_extrainfo></apm_extrainfo>
-	<apm_extraedit></apm_extraedit>
+	<apm_releasedate>0</apm_releasedate>
+	<apm_author />
+	<apm_relatedurl />
+	<apm_extrainfo />
+	<apm_extraedit />
 	<dependencies>
 	</dependencies>
 	<codes>
@@ -259,8 +259,8 @@ $template_hook['headinclude_javascript'] .= "\n" . $tmpl;
 if ('album' == THIS_SCRIPT) 
 {
     $replaces = array(
-        '>&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>' => 'name="LinkPrev">&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>',
-        '>\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>' => 'name="LinkNext">\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>',
+        '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'prev_attachmentid\'] . \'" class="textcontrol">\'' => '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'prev_attachmentid\'] . \'" class="textcontrol" name="LinkPrev">\'',
+        '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'next_attachmentid\'] . \'" class="textcontrol">\'' => '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'next_attachmentid\'] . \'" class="textcontrol" name="LinkNext">\'',
     );
 
     $vbulletin->templatecache['album_pictureview'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['album_pictureview'] );
