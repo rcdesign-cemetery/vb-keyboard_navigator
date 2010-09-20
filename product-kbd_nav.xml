@@ -3,7 +3,7 @@
 <product productid="kbd_nav" active="1">
 	<title>Keyboard Navigator</title>
 	<description>Adds kbd shortcuts for fast navigation (CTRL+Arrows and so on)</description>
-	<version>0.7</version>
+	<version>0.8</version>
 	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=kbd_nav]]></url>
 	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=kbd_nav]]></versioncheckurl>
 	<apm_releasedate>0</apm_releasedate>
@@ -67,9 +67,12 @@ function NavigateThrough (event)
 	</stylevars>
 	<plugins>
 		<plugin active="1" executionorder="5">
-			<title>Cache template</title>
+			<title>Cache templates</title>
 			<hookname>cache_templates</hookname>
-			<phpcode><![CDATA[$cache[] = 'kbd_nav';]]></phpcode>
+			<phpcode><![CDATA[$cache[] = 'kbd_nav';
+
+//Bugfix - template not cached by default
+$cache[] = 'pagenav_window';]]></phpcode>
 		</plugin>
 		<plugin active="1" executionorder="5">
 			<title>Get a thread with new posts</title>
@@ -258,6 +261,10 @@ $template_hook['headinclude_javascript'] .= "\n" . $tmpl;
 
 if ('album' == THIS_SCRIPT) 
 {
+   /* $replaces = array(
+        '>&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>' => 'name="LinkPrev">&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>',
+        '>\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>' => 'name="LinkNext">\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>',
+    );*/
     $replaces = array(
         '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'prev_attachmentid\'] . \'" class="textcontrol">\'' => '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'prev_attachmentid\'] . \'" class="textcontrol" name="LinkPrev">\'',
         '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'next_attachmentid\'] . \'" class="textcontrol">\'' => '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'next_attachmentid\'] . \'" class="textcontrol" name="LinkNext">\'',
@@ -280,7 +287,10 @@ else
     );
 
     $vbulletin->templatecache['pagenav'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['pagenav'] );
-
+    
+    //This is for search, which has different template
+    $vbulletin->templatecache['pagenav_window'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['pagenav_window'] );
+    
     unset($replaces, $tmpl);
 }]]></phpcode>
 		</plugin>
