@@ -3,7 +3,7 @@
 <product productid="kbd_nav" active="1">
 	<title>Keyboard Navigator</title>
 	<description>Adds kbd shortcuts for fast navigation (CTRL+Arrows and so on)</description>
-	<version>0.8</version>
+	<version>0.9</version>
 	<url><![CDATA[http://www.vbulletin.org/forum/misc.php?do=producthelp&pid=kbd_nav]]></url>
 	<versioncheckurl><![CDATA[http://www.vbulletin.org/forum/misc.php?do=productcheck&pid=kbd_nav]]></versioncheckurl>
 	<apm_releasedate>0</apm_releasedate>
@@ -261,18 +261,36 @@ $template_hook['headinclude_javascript'] .= "\n" . $tmpl;
 
 if ('album' == THIS_SCRIPT) 
 {
-   /* $replaces = array(
-        '>&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>' => 'name="LinkPrev">&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>',
-        '>\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>' => 'name="LinkNext">\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>',
-    );*/
-    $replaces = array(
-        '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'prev_attachmentid\'] . \'" class="textcontrol">\'' => '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'prev_attachmentid\'] . \'" class="textcontrol" name="LinkPrev">\'',
-        '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'next_attachmentid\'] . \'" class="textcontrol">\'' => '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'next_attachmentid\'] . \'" class="textcontrol" name="LinkNext">\'',
-    );
-
-    $vbulletin->templatecache['album_pictureview'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['album_pictureview'] );
-
-    unset($replaces, $tmpl);
+    if (isset($vbulletin->templatecache['album_pictureview']))
+    {
+       /* $replaces = array(
+            '>&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>' => 'name="LinkPrev">&larr; \' . $pic_location[\'prev_text_short\'] . \'</a>',
+            '>\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>' => 'name="LinkNext">\' . $pic_location[\'next_text_short\'] . \' &rarr;</a>',
+        );*/
+        $replaces = array(
+            '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'prev_attachmentid\'] . \'" class="textcontrol">\'' => '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'prev_attachmentid\'] . \'" class="textcontrol" name="LinkPrev">\'',
+            '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'next_attachmentid\'] . \'" class="textcontrol">\'' => '<a href="album.php?\' . $session[\'sessionurl\'] . \'albumid=\' . $albuminfo[\'albumid\'] . \'&amp;attachmentid=\' . $pic_location[\'next_attachmentid\'] . \'" class="textcontrol" name="LinkNext">\'',
+        );
+    
+        $before_patch = $vbulletin->templatecache['album_pictureview'];
+        $vbulletin->templatecache['album_pictureview'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['album_pictureview'] );
+        if ($before_patch == $vbulletin->templatecache['album_pictureview'])
+        {
+            $err_message = sprintf("Product '%s', error in hook %s : can't modify template '%s'",
+                                'Keyboard Navigator',
+                                'parse_templates',
+                                'album_pictureview');
+            error_log($err_message);           // Send to PHP error log
+            if ($vbulletin->debug)
+            {
+                trigger_error($err_message, E_USER_WARNING); // Display on page
+                require_once(DIR . '/includes/functions_log_error.php');
+                log_vbulletin_error($err_message, 'php');    // Send to vB error log
+            }
+            unset($err_message, $before_patch);
+        }
+        unset($replaces, $tmpl);
+    }
 }
 else
 {
@@ -285,12 +303,49 @@ else
         '<img src="\' . vB_Template_Runtime::fetchStylevar("imgdir_pagination") . \'/previous-\' . vB_Template_Runtime::fetchStylevar("right") . \'.png" alt="\' . vB_Template_Runtime::parsePhrase("previous") . \'" />' => '&larr; Ctrl',
         '<img src="\' . vB_Template_Runtime::fetchStylevar("imgdir_pagination") . \'/next-\' . vB_Template_Runtime::fetchStylevar("right") . \'.png" alt="\' . vB_Template_Runtime::parsePhrase("next") . \'" />' => 'Ctrl &rarr;',
     );
-
-    $vbulletin->templatecache['pagenav'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['pagenav'] );
     
-    //This is for search, which has different template
-    $vbulletin->templatecache['pagenav_window'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['pagenav_window'] );
+    if (isset($vbulletin->templatecache['pagenav']))
+    {
+        $before_patch = $vbulletin->templatecache['pagenav'];
+        $vbulletin->templatecache['pagenav'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['pagenav'] );
+        if ($before_patch == $vbulletin->templatecache['pagenav'])
+        {
+            $err_message = sprintf("Product '%s', error in hook %s : can't modify template '%s'",
+                                'Keyboard Navigator',
+                                'parse_templates',
+                                'pagenav');
+            error_log($err_message);           // Send to PHP error log
+            if ($vbulletin->debug)
+            {
+                trigger_error($err_message, E_USER_WARNING); // Display on page
+                require_once(DIR . '/includes/functions_log_error.php');
+                log_vbulletin_error($err_message, 'php');    // Send to vB error log
+            }
+            unset($err_message, $before_patch);
+        }
+    }
     
+    if (isset($vbulletin->templatecache['pagenav_window']))
+    {
+        //This is for search, which has different template
+        $before_patch = $vbulletin->templatecache['pagenav_window'];
+        $vbulletin->templatecache['pagenav_window'] = str_replace( array_keys($replaces), array_values($replaces), $vbulletin->templatecache['pagenav_window'] );
+        if ($before_patch == $vbulletin->templatecache['pagenav_window'])
+        {
+            $err_message = sprintf("Product '%s', error in hook %s : can't modify template '%s'",
+                                'Keyboard Navigator',
+                                'parse_templates',
+                                'pagenav_window');
+            error_log($err_message);           // Send to PHP error log
+            if ($vbulletin->debug)
+            {
+                trigger_error($err_message, E_USER_WARNING); // Display on page
+                require_once(DIR . '/includes/functions_log_error.php');
+                log_vbulletin_error($err_message, 'php');    // Send to vB error log
+            }
+            unset($err_message, $before_patch);
+        }
+    }
     unset($replaces, $tmpl);
 }]]></phpcode>
 		</plugin>
